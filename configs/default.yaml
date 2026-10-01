@@ -1,0 +1,15 @@
+﻿project:
+  name: cranio-reconstruction
+
+sc_dreg:
+  pca_dim: 60
+  input_size: 128
+  volume_size: 128
+
+paths:
+  upstream: vendor/sc-dreg
+  models: models
+  raw_data: data/raw
+  private_data: data/private
+  processed_data: data/processed
+  outputs: outputs

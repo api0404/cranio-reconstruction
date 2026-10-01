@@ -1,0 +1,75 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Model weights and large model assets
+models/*
+!models/.gitkeep
+
+# Raw/private medical data
+data/raw/*
+!data/raw/.gitkeep
+
+data/private/*
+!data/private/.gitkeep
+
+# Generated/intermediate data
+data/processed/*
+!data/processed/.gitkeep
+
+# Generated outputs
+outputs/*
+!outputs/.gitkeep
+
+# Large generated artifacts
+artifacts/*
+!artifacts/.gitkeep
+
+# Medical imaging formats
+*.dcm
+*.dicom
+*.nrrd
+*.mha
+*.mhd
+*.nii
+*.nii.gz
+
+# Model checkpoints / weights
+*.ckpt
+*.pth
+*.pt
+*.tar
+
+# Large numeric model assets
+*.npy
+*.npz
+
+# Blender backups
+*.blend1
+*.blend2
+*.blend3
+
+# Temporary files
+*.tmp
+*.temp
+~*

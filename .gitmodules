@@ -1,0 +1,3 @@
+[submodule "vendor/sc-dreg"]
+	path = vendor/sc-dreg
+	url = https://github.com/Jyk-122/SC-DREG.git
