@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import time
 
 import numpy as np
 from PIL import Image
@@ -51,6 +52,7 @@ def save_png(path: Path, tensor) -> None:
 
 
 def main() -> int:
+    started = time.perf_counter()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--models", type=Path, default=ROOT / "models")
     parser.add_argument("--input", type=Path, default=ROOT / "vendor" / "sc-dreg" / "tests" / "04002.png")
@@ -79,8 +81,11 @@ def main() -> int:
     # Upstream test.py never calls eval(); retain training-mode BatchNorm behavior.
     input_array = np.asarray(Image.open(args.input).convert("L"), dtype=np.float32) / 255.0
     img = torch.from_numpy(input_array).reshape(1, 1, 128, 128).to(device)
+    inference_started = time.perf_counter()
     with torch.inference_mode():
         outputs = model(img)
+    inference_seconds = time.perf_counter() - inference_started
+    print(f"Forward inference time: {inference_seconds:.2f} s", flush=True)
     coarse_drr, refine_drr, _, _, _, _, refine_volume, _, _, _, _, refine_vol_seg = outputs
     args.output_dir.mkdir(parents=True, exist_ok=True)
     stem = args.input.stem
@@ -91,6 +96,25 @@ def main() -> int:
         sitk.WriteImage(sitk.GetImageFromArray(volume), str(args.output_dir / f"{stem}_{suffix}.nii.gz"))
     metrics = compare(args.output_dir)
     (args.output_dir / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
+    coeff_header = np.load(args.models / "coeff4.npy", mmap_mode="r", allow_pickle=False)
+    nifti_geometry = {}
+    for suffix in ("refine", "seg_reg"):
+        volume_image = sitk.ReadImage(str(args.output_dir / f"{stem}_{suffix}.nii.gz"))
+        nifti_geometry[suffix] = {"spacing": volume_image.GetSpacing(),
+                                  "origin": volume_image.GetOrigin(),
+                                  "direction": volume_image.GetDirection()}
+    run_info = {"python": sys.version.split()[0], "torch": torch.__version__, "device": str(device),
+                "device_name": device_name, "cuda_build": torch.version.cuda,
+                "coeff_shape": list(coeff_header.shape), "coeff_dtype": str(coeff_header.dtype),
+                "coeff_logical_bytes": coeff_header.nbytes,
+                "materialized_pca_bytes": args.pca_dim * coeff_header.shape[1] * np.dtype("float32").itemsize,
+                "nifti_geometry": nifti_geometry,
+                "pca_dim": args.pca_dim, "forward_seconds": inference_seconds,
+                "total_seconds": time.perf_counter() - started}
+    if device.type == "cuda":
+        run_info["peak_cuda_allocated_bytes"] = torch.cuda.max_memory_allocated()
+    (args.output_dir / "run_info.json").write_text(json.dumps(run_info, indent=2) + "\n", encoding="utf-8")
+    print(f"Total time: {run_info['total_seconds']:.2f} s", flush=True)
     return 0
 
 

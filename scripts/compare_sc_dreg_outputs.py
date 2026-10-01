@@ -33,14 +33,26 @@ def compare(output_dir: Path, reference_dir: Path = REFERENCE) -> dict:
                 raise ValueError(f"NIfTI geometry differs: {name}")
         if a.shape != b.shape:
             raise ValueError(f"Shape differs for {name}: {a.shape} vs {b.shape}")
-        diff = a.astype(np.float64) - b.astype(np.float64)
+        if not np.isfinite(a).all() or not np.isfinite(b).all():
+            raise ValueError(f"Nonfinite values in {name}")
+        a64, b64 = a.astype(np.float64), b.astype(np.float64)
+        diff = a64 - b64
+        correlation = float(np.corrcoef(a64.ravel(), b64.ravel())[0, 1])
+        differing = int(np.count_nonzero(diff))
         results[name] = {
             "shape": list(a.shape), "dtype_generated": str(a.dtype), "dtype_reference": str(b.dtype),
+            "generated": {"min": float(a64.min()), "max": float(a64.max()),
+                          "mean": float(a64.mean()), "std": float(a64.std())},
+            "reference": {"min": float(b64.min()), "max": float(b64.max()),
+                          "mean": float(b64.mean()), "std": float(b64.std())},
             "mae": float(np.abs(diff).mean()), "rmse": float(np.sqrt(np.mean(diff * diff))),
-            "max_abs": float(np.abs(diff).max()), "exact_fraction": float(np.mean(diff == 0)),
+            "max_abs": float(np.abs(diff).max()), "correlation": correlation,
+            "differing_elements": differing, "differing_fraction": differing / diff.size,
+            "exact_fraction": float(np.mean(diff == 0)),
         }
         print(f"{name}: MAE={results[name]['mae']:.8g}, RMSE={results[name]['rmse']:.8g}, "
-              f"max={results[name]['max_abs']:.8g}, exact={results[name]['exact_fraction']:.4%}")
+              f"max={results[name]['max_abs']:.8g}, corr={correlation:.8g}, "
+              f"differing={differing}/{diff.size} ({results[name]['differing_fraction']:.4%})")
     return results
 
 

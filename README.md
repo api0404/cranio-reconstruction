@@ -66,6 +66,13 @@ High-resolution lateral cephalogram
 Reproduce the published SC-DREG inference pipeline exactly on its own example
 input before modifying model behavior.
 
+**Status (2026-10-01): reproduced on the published `04002` example.** The
+refined volume has MAE `5.08e-8` against the committed reference, the
+segmentation and raw PNG match exactly, and sparse DRR differences are
+quantified in [the baseline audit](docs/sc_dreg_notes.md). This result does
+not validate clinical cephalogram preprocessing or patient-specific 3D
+accuracy.
+
 Success means:
 
 1. the published example `04002.png` runs successfully;
