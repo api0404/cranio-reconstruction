@@ -69,6 +69,42 @@ def intensity_map(image: Image.Image, config: dict) -> tuple[Image.Image, dict]:
         "warning": "Clipping and uint8 quantization are not intensity-invertible; original is retained"}
 
 
+def apply_artifact_masks(image: Image.Image, masks: list, landmarks: list) -> tuple[Image.Image, Image.Image, list]:
+    """Fill explicitly marked non-anatomical polygons on a copy of the source."""
+    mask = Image.new("L", image.size, 0)
+    mask_draw = ImageDraw.Draw(mask)
+    records = []
+    for item in masks:
+        polygon = np.asarray(item["polygon_original"], dtype=np.float64)
+        if polygon.ndim != 2 or polygon.shape[1] != 2 or len(polygon) < 3 or not np.isfinite(polygon).all():
+            raise ValueError("Artifact mask polygon needs at least three finite original-pixel points")
+        if ((polygon[:, 0] < 0) | (polygon[:, 0] >= image.width) |
+                (polygon[:, 1] < 0) | (polygon[:, 1] >= image.height)).any():
+            raise ValueError("Artifact mask vertices must stay inside the source image")
+        if not item.get("non_anatomical_reason"):
+            raise ValueError("Artifact mask requires a non_anatomical_reason")
+        fill_value = int(item.get("fill_value", 0))
+        if not 0 <= fill_value <= 255:
+            raise ValueError("Artifact fill_value must be in [0, 255]")
+        region = Image.new("1", image.size, 0)
+        ImageDraw.Draw(region).polygon([tuple(x) for x in polygon], fill=1)
+        for landmark in landmarks:
+            point = tuple(round(x) for x in landmark["source"])
+            if region.getpixel(point):
+                raise ValueError(f"Artifact mask overlaps landmark {landmark['name']}")
+        mask_draw.polygon([tuple(x) for x in polygon], fill=255)
+        records.append({"name": item["name"], "polygon_original": polygon.tolist(),
+                        "non_anatomical_reason": item["non_anatomical_reason"],
+                        "fill_value": fill_value})
+    output = image.copy()
+    for item in records:
+        layer = Image.new("L", image.size, item["fill_value"])
+        region = Image.new("L", image.size, 0)
+        ImageDraw.Draw(region).polygon([tuple(x) for x in item["polygon_original"]], fill=255)
+        output.paste(layer, mask=region)
+    return output, mask, records
+
+
 def draw_points(draw: ImageDraw.ImageDraw, items: list, matrix: np.ndarray,
                 key: str, scale: float = 1.0, offset=(0, 0)) -> None:
     for item in items:
@@ -167,15 +203,20 @@ def run(config_path: Path, output_dir: Path) -> None:
                            "sha256": hashlib.sha256(target_path.read_bytes()).hexdigest()}
     landmarks = config.get("landmarks", [])
     output_dir.mkdir(parents=True, exist_ok=True)
+    masked_source, artifact_mask, mask_records = apply_artifact_masks(
+        original, config.get("artifact_masks", []), landmarks)
+    if mask_records:
+        masked_source.save(output_dir / "masked_source.png")
+        artifact_mask.save(output_dir / "artifact_mask.png")
     reports = []
     for name, matrix, details in candidates_from_config(config, original.size, landmarks):
         diagnostics = geometry_diagnostics(matrix, original.size)
-        candidate = original.transform((128, 128), Image.Transform.AFFINE,
+        candidate = masked_source.transform((128, 128), Image.Transform.AFFINE,
                                        pillow_inverse_coefficients(matrix),
                                        resample=Image.Resampling.BICUBIC, fillcolor=0)
         candidate, intensity = intensity_map(candidate, config.get("intensity", {"mode": "identity"}))
         candidate.save(output_dir / f"{name}_128.png")
-        make_preview(original, candidate, target, matrix, landmarks).save(output_dir / f"{name}_preview.png")
+        make_preview(masked_source, candidate, target, matrix, landmarks).save(output_dir / f"{name}_preview.png")
         mapped = []
         for item in landmarks:
             predicted = map_points(matrix, [item["source"]])[0]
@@ -196,6 +237,8 @@ def run(config_path: Path, output_dir: Path) -> None:
               f"preview={output_dir / (name + '_preview.png')}")
     report = {"status": "candidate_clinical_input_not_validated", "source": source_metadata,
               "target": target_metadata, "pillow_version": PIL.__version__,
+              "artifact_masks": mask_records,
+              "artifact_masked_pixel_fraction": float(np.mean(np.asarray(artifact_mask) > 0)),
               "config": str(config_path.resolve()), "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
               "coordinate_convention": "pixel centers; x right, y down; origin at top-left pixel center",
               "spatial_warning": "Coordinate transform is invertible; cropped/resampled raster is not",

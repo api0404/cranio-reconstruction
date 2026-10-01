@@ -76,6 +76,8 @@ accuracy.
 The next project-side experiment creates reversible-coordinate 128×128
 clinical-ceph candidates with explicit FOV and landmark assumptions. See
 [clinical ceph canonicalization](docs/clinical_ceph_canonicalization.md).
+The local ceph's masked-candidate inference and perturbation results are in
+[the input-domain sensitivity study](docs/sc_dreg_input_sensitivity.md).
 
 Success means:
 

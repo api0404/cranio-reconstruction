@@ -13,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ceph_canonicalization import (fit_similarity, fov_transform, geometry_diagnostics,
                                     map_points, orientation_matrix,
                                     pillow_inverse_coefficients, scale_about_model_center)
-from canonicalize_ceph import run
+from canonicalize_ceph import apply_artifact_masks, run
+from study_sc_dreg_input_sensitivity import ncc, sweep_transforms
 
 
 class CanonicalizationTests(unittest.TestCase):
@@ -65,6 +66,31 @@ class CanonicalizationTests(unittest.TestCase):
             self.assertEqual(candidate["landmarks"][0]["round_trip_original"], [100.0, 90.0])
             self.assertTrue(candidate["geometry"]["all_fov_corners_inside_source"])
             self.assertEqual(candidate["geometry"]["fraction_model_pixel_centers_outside_source"], 0)
+
+    def test_artifact_mask_changes_only_explicit_region_and_rejects_landmark_overlap(self):
+        image = Image.fromarray(np.full((20, 30), 120, dtype=np.uint8))
+        region = {"name": "ruler", "polygon_original": [[22, 2], [27, 2], [27, 12], [22, 12]],
+                  "fill_value": 0, "non_anatomical_reason": "test background ruler"}
+        masked, mask, records = apply_artifact_masks(image, [region],
+                                                     [{"name": "S", "source": [10, 10]}])
+        self.assertEqual(np.asarray(image)[5, 24], 120)
+        self.assertEqual(np.asarray(masked)[5, 24], 0)
+        self.assertEqual(np.asarray(masked)[5, 10], 120)
+        self.assertEqual(np.count_nonzero(np.asarray(masked) != np.asarray(image)),
+                         np.count_nonzero(np.asarray(mask)))
+        self.assertEqual(records[0]["name"], "ruler")
+        with self.assertRaisesRegex(ValueError, "overlaps landmark"):
+            apply_artifact_masks(image, [region], [{"name": "S", "source": [24, 5]}])
+
+    def test_sweep_perturbations_are_small_similarity_transforms(self):
+        base = fov_transform([100, 100], 180)
+        transforms = dict(sweep_transforms(base))
+        self.assertEqual(len(transforms), 8)
+        for matrix in transforms.values():
+            geometry_diagnostics(matrix, (220, 220))
+        point = map_points(base, [[100, 100]])
+        self.assertTrue(np.allclose(map_points(transforms["x_plus2px"], [[100, 100]]), point + [2, 0]))
+        self.assertAlmostEqual(ncc(np.arange(10), np.arange(10)), 1)
 
 
 if __name__ == "__main__":
