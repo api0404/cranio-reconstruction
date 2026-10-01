@@ -16,6 +16,8 @@ ASSET_NAMES = ("cbct_c2f_model_ckpt.tar", "coeff4.npy", "mean4.npy", "ref.nii.gz
 
 
 def validate_inputs(models: Path, image: Path, pca_dim: int) -> None:
+    if pca_dim != 60:
+        raise ValueError(f"Published checkpoint has a 60-output PCA head; got --pca-dim={pca_dim}")
     missing = [str(models / name) for name in ASSET_NAMES if not (models / name).is_file()]
     if missing:
         raise FileNotFoundError("Required SC-DREG asset(s) missing:\n  " + "\n  ".join(missing))
@@ -24,12 +26,17 @@ def validate_inputs(models: Path, image: Path, pca_dim: int) -> None:
     with Image.open(image) as im:
         if im.size != (128, 128):
             raise ValueError(f"SC-DREG requires a 128x128 input; got {im.size}")
-    coeff = np.load(models / "coeff4.npy", mmap_mode="r")
-    mean = np.load(models / "mean4.npy", mmap_mode="r")
+    try:
+        coeff = np.load(models / "coeff4.npy", mmap_mode="r", allow_pickle=False)
+        mean = np.load(models / "mean4.npy", mmap_mode="r", allow_pickle=False)
+    except (EOFError, OSError, ValueError) as exc:
+        raise ValueError(f"Cannot memory-map SC-DREG PCA assets (possibly incomplete download): {exc}") from exc
     if coeff.ndim != 2 or coeff.shape[0] < pca_dim or coeff.shape[1] != 128**3 * 3:
         raise ValueError(f"Unexpected coeff4.npy shape {coeff.shape}; need at least ({pca_dim}, {128**3 * 3})")
     if mean.shape != (128**3 * 3,):
         raise ValueError(f"Unexpected mean4.npy shape {mean.shape}")
+    if coeff.dtype.kind != "f" or mean.dtype.kind != "f":
+        raise ValueError(f"PCA arrays must be floating point; got coeff={coeff.dtype}, mean={mean.dtype}")
     print(f"coeff4.npy: shape={coeff.shape}, dtype={coeff.dtype}; loading first {pca_dim} rows")
     print(f"mean4.npy: shape={mean.shape}, dtype={mean.dtype}")
 
@@ -63,7 +70,9 @@ def main() -> int:
     torch.cuda.manual_seed_all(42)
     torch.backends.cudnn.deterministic = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Python {sys.version.split()[0]}, PyTorch {torch.__version__}, device={device}", flush=True)
+    device_name = torch.cuda.get_device_name() if device.type == "cuda" else "CPU (CUDA unavailable)"
+    print(f"Python {sys.version.split()[0]}, PyTorch {torch.__version__}, "
+          f"CUDA build={torch.version.cuda}, device={device}: {device_name}", flush=True)
     model = load_model_class()(args.pca_dim, str(args.models)).to(device)
     checkpoint = torch.load(args.models / "cbct_c2f_model_ckpt.tar", map_location=device, weights_only=True, mmap=True)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)

@@ -157,6 +157,9 @@ Run:
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements-sc-dreg.txt
 .venv\Scripts\python scripts/inspect_model_assets.py
+.venv\Scripts\python scripts/check_sc_dreg_checkpoint.py
+.venv\Scripts\python scripts/check_sc_dreg_reference_drr.py
+.venv\Scripts\python -m unittest discover -s tests
 .venv\Scripts\python scripts/run_sc_dreg_demo.py
 ```
 

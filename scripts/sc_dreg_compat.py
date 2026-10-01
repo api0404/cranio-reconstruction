@@ -11,6 +11,15 @@ ROOT = Path(__file__).resolve().parents[1]
 UPSTREAM_SRC = ROOT / "vendor" / "sc-dreg" / "src"
 
 
+def load_pca_basis(path, pca_dim, device):
+    """Match upstream float32 conversion without reading unused PCA rows."""
+    import numpy as np
+    import torch
+
+    mapped = np.load(path, mmap_mode="r", allow_pickle=False)
+    return torch.from_numpy(mapped[:pca_dim].astype(np.float32)).to(device)
+
+
 def load_model_class():
     """Load upstream c2f_model with device and memory changes only."""
     import torch
@@ -21,7 +30,7 @@ def load_model_class():
         "net = models.resnet34(pretrained=True)": "net = models.resnet34(weights=None)",
         "self.param_path = param_path": "self.param_path = param_path\n        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')",
         "self.COEFF = torch.Tensor(np.load(os.path.join(param_path, 'coeff4.npy'))).cuda()":
-            "self.COEFF = torch.from_numpy(np.load(os.path.join(param_path, 'coeff4.npy'), mmap_mode='r')[:pca_dim].astype(np.float32)).to(device)",
+            "self.COEFF = load_pca_basis(os.path.join(param_path, 'coeff4.npy'), pca_dim, device)",
         "self.mean_ = torch.Tensor(np.load(os.path.join(param_path, 'mean4.npy'))).cuda()":
             "self.mean_ = torch.from_numpy(np.load(os.path.join(param_path, 'mean4.npy'), mmap_mode='r').astype(np.float32)).to(device)",
         ".cuda().reshape(1, 1, 128, 128, 128)": ".to(device).reshape(1, 1, 128, 128, 128)",
@@ -38,5 +47,6 @@ def load_model_class():
     sys.path.insert(0, str(UPSTREAM_SRC))
     module = types.ModuleType("sc_dreg_compat_model")
     module.__file__ = str(source_path)
+    module.load_pca_basis = load_pca_basis
     exec(compile(source, str(source_path), "exec"), module.__dict__)
     return module.c2f_model

@@ -20,6 +20,9 @@ On Windows with Python 3.11 (tested here with 3.11.9):
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements-sc-dreg.txt
 .venv\Scripts\python scripts/inspect_model_assets.py
+.venv\Scripts\python scripts/check_sc_dreg_checkpoint.py
+.venv\Scripts\python scripts/check_sc_dreg_reference_drr.py
+.venv\Scripts\python -m unittest discover -s tests
 .venv\Scripts\python scripts/run_sc_dreg_demo.py
 ```
 
@@ -104,11 +107,43 @@ speed and numerical agreement on this CPU remain unverified.
 | `cbct_c2f_model_ckpt.tar` | Epoch 29; 461 state tensors, 397 float32 and 64 int64; PCA head `(60,512)`. |
 | `xray_seg_unet_ckpt.tar` | Epoch 499; 196 state tensors, 168 float32 and 28 int64; not loaded by `test.py`. |
 
+`check_sc_dreg_checkpoint.py` constructs only the three network modules, with
+no PCA or volume loaded. On PyTorch 2.14.1+cpu, strict loading reports **all
+keys matched** for both checkpoints; the main network has 32,032,299 trainable
+parameters. The standalone UNet's 112 parameter tensors are exactly equal to
+the UNet embedded in the main checkpoint. Its other 84 buffers differ:
+28 running means, 28 running variances, and 28 batch counters. This is
+consistent with additional BatchNorm updates in main-model training.
+
+The mean displacement has range -3.84294 to 3.21847 voxel-index units, mean
+-0.05694 and standard deviation 0.62121. The source reference has 837,369
+nonzero voxels; its mandible mask has 23,052 nonzero voxels and exactly two
+values. The committed refined volume has 854,951 nonzero voxels, mean 0.15859,
+and mean absolute voxel difference 0.037685 from the source reference.
+The committed rounded mandible output has 16,565 nonzero voxels.
+
 The committed `04002_raw.png` is pixel-identical to `04002.png`. The two DRRs
 are 128 × 128 uint8 PNGs. The refined CBCT and rounded segmentation are 128³
 float32 NIfTI images. Comparing the reference directory to itself yields
 MAE = RMSE = max absolute error = 0 for every file. This validates the
 comparison path, not new inference agreement.
+
+The exact tensor from upstream `read_img('04002.png')` is bitwise equal to
+the project runner's tensor: float32 `[128,128]`, min 0, max 254/255 and
+mean 0.36354002. Re-encoding it with the project PNG writer gives pixels
+identical to the committed raw output. The PNG has no embedded spatial or
+acquisition metadata.
+
+Without PCA, `check_sc_dreg_reference_drr.py` runs upstream `GenerateDRR`
+on the committed refined NIfTI. On this CPU build, the regenerated DRR
+differs from the committed PNG in **13/16,384 pixels**, MAE 0.0043335 gray
+levels and maximum absolute difference 6. This isolates a small difference
+in the projection path on the current CPU/PyTorch build, independent of
+registration. Using `align_corners=True` for its volume sampler is much
+worse: 10,584 differing pixels, MAE 1.61847 and maximum difference 29.
+The runner retains the upstream default (`False`) for this sampler. The
+source does not reveal which exact PyTorch/CUDA build produced the committed
+PNG; the cause of the remaining 13-pixel difference is not established.
 
 ## Compatibility edits in project code
 
@@ -140,6 +175,13 @@ Crop boundaries, detector spacing, pose/orientation, intensity normalization
 before PNG creation, anatomical calibration, and original CBCT voxel spacing
 before downsampling are unknown. The 128 × 128 reshape alone is not a clinical
 preprocessing recipe.
+
+An October 2026 search of the [author's public repository](https://github.com/Jyk-122/SC-DREG)
+and indexed records for the [journal paper](https://doi.org/10.1109/TMI.2024.3456251)
+found no accessible author-provided clinical input preparation or supplementary
+projection calibration procedure. The paper full text was not accessible in
+that search, so this is an access limit rather than evidence that no such
+procedure exists.
 
 The next required step in **this milestone** is to place authentic `coeff4.npy`
 in `models/`, run the demo, record its full shape/dtype, and diagnose any
