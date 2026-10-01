@@ -154,8 +154,16 @@ rather than loaded fully into memory.
 Run:
 
 ```powershell
-python scripts/inspect_model_assets.py
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements-sc-dreg.txt
+.venv\Scripts\python scripts/inspect_model_assets.py
+.venv\Scripts\python scripts/run_sc_dreg_demo.py
 ```
+
+The demo writes to `outputs/sc_dreg_demo/` and compares all five outputs
+numerically with the upstream example. It reports missing assets before
+inference. See [the baseline audit](docs/sc_dreg_notes.md) for observed shapes,
+compatibility details and open input assumptions.
 
 ## Data policy
 

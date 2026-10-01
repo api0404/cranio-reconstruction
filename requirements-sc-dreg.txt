@@ -1,0 +1,9 @@
+# Verified CPU environment on Python 3.11.9 / Windows for project-side runner.
+# PyTorch CUDA installs may require the wheel index matching the local driver.
+torch==2.14.1
+torchvision==0.29.1
+numpy==2.4.6
+Pillow==12.3.0
+imageio==2.38.0
+SimpleITK==2.5.6
+pytorch-msssim==1.0.0
