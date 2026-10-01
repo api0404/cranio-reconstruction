@@ -58,7 +58,14 @@ def main() -> int:
     parser.add_argument("--input", type=Path, default=ROOT / "vendor" / "sc-dreg" / "tests" / "04002.png")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "sc_dreg_demo")
     parser.add_argument("--pca-dim", type=int, default=60)
+    parser.add_argument("--skip-reference-comparison", action="store_true",
+                        help="Use for non-04002 inputs; no published ground truth applies")
     args = parser.parse_args()
+    published_input = ROOT / "vendor" / "sc-dreg" / "tests" / "04002.png"
+    if args.input.resolve() != published_input.resolve() and not args.skip_reference_comparison:
+        print("Custom inputs require --skip-reference-comparison: the 04002 reference is a different subject",
+              file=sys.stderr)
+        return 2
     try:
         validate_inputs(args.models, args.input, args.pca_dim)
     except (FileNotFoundError, ValueError) as exc:
@@ -94,8 +101,9 @@ def main() -> int:
     for suffix, tensor in (("refine", refine_volume), ("seg_reg", torch.round(refine_vol_seg))):
         volume = tensor.detach().squeeze().cpu().numpy()
         sitk.WriteImage(sitk.GetImageFromArray(volume), str(args.output_dir / f"{stem}_{suffix}.nii.gz"))
-    metrics = compare(args.output_dir)
-    (args.output_dir / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
+    if not args.skip_reference_comparison:
+        metrics = compare(args.output_dir)
+        (args.output_dir / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
     coeff_header = np.load(args.models / "coeff4.npy", mmap_mode="r", allow_pickle=False)
     nifti_geometry = {}
     for suffix in ("refine", "seg_reg"):

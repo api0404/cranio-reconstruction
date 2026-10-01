@@ -1,5 +1,10 @@
 # Exploratory cephalogram alignment
 
+This early preview has been superseded for repeatable candidate generation
+by [clinical ceph canonicalization](clinical_ceph_canonicalization.md).
+Its provisional visual anchor file is still useful as an example, but its
+anatomical points have not been clinically reviewed.
+
 This is separate from the published SC-DREG `04002` reproduction. The
 upstream inference code requires a prepared 128 x 128 grayscale image but
 does not specify a clinical image-to-model registration. The alignment below
@@ -44,9 +49,8 @@ differences. The preview should not be interpreted as a successful patient
 reconstruction or a verified model-ready clinical image.
 
 The target is the published `04002.png`, which depicts another individual.
-Once the SC-DREG baseline is reproduced, a fixed projection of the model
-reference may be a preferable coordinate target; that choice must be
-evaluated rather than assumed. A calibrated, overlay-free image and reviewed
-landmarks would also improve this experiment. The original image and fitted
-transform must be kept so any estimated geometry can be mapped back to its
-source pixels.
+The SC-DREG baseline has since been reproduced. A fixed projection of the
+model reference may be a preferable coordinate target, but that choice
+requires evaluation. A calibrated, overlay-free image and reviewed landmarks
+would improve this experiment. The newer pipeline retains the original and
+the fitted transform so model-space coordinates can be mapped to source pixels.

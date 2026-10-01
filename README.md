@@ -73,6 +73,10 @@ quantified in [the baseline audit](docs/sc_dreg_notes.md). This result does
 not validate clinical cephalogram preprocessing or patient-specific 3D
 accuracy.
 
+The next project-side experiment creates reversible-coordinate 128×128
+clinical-ceph candidates with explicit FOV and landmark assumptions. See
+[clinical ceph canonicalization](docs/clinical_ceph_canonicalization.md).
+
 Success means:
 
 1. the published example `04002.png` runs successfully;
