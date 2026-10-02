@@ -76,6 +76,12 @@ synthetic SC-DREG output. Native ALI preprocessing erases SC-DREG's unit-range
 intensities, so this probe uses a documented hypothetical intensity mapping.
 Its landmarks are experimental annotations, not patient-specific 3D truth.
 
+An [optional pretrained 2D landmark probe](docs/ceph_2d_landmarks.md) compares
+py-ceph predictions on the original clinical image with the curated manual
+marks, then generates separate manual- or automatic-landmark-driven 128 × 128
+SC-DREG candidates. The manual export remains the reference and the automatic
+predictions require review.
+
 ## Repository layout
 
 ```text

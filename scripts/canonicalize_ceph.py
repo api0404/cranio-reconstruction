@@ -237,6 +237,7 @@ def run(config_path: Path, output_dir: Path) -> None:
               f"preview={output_dir / (name + '_preview.png')}")
     report = {"status": "candidate_clinical_input_not_validated", "source": source_metadata,
               "target": target_metadata, "pillow_version": PIL.__version__,
+              "landmark_provenance": config.get("provenance"),
               "artifact_masks": mask_records,
               "artifact_masked_pixel_fraction": float(np.mean(np.asarray(artifact_mask) > 0)),
               "config": str(config_path.resolve()), "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),

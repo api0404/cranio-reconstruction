@@ -11,6 +11,7 @@ htmlcov/
 # Virtual environments
 .venv/
 .venv-ali/
+.venv-2d/
 .uv-cache/
 venv/
 env/
@@ -69,6 +70,9 @@ artifacts/*
 # External ALI source checkouts are local, optional research dependencies.
 vendor/ali-cbct/
 vendor/slicer-automated-dental-tools/
+vendor/py-ceph/
+vendor/medical-landmark-detection/
+vendor/CEPHMark-Net/
 
 # Blender backups
 *.blend1

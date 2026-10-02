@@ -9,7 +9,7 @@ model. This is exploratory work, not a diagnostic or surgical-planning tool.
 
 ## Current status and scope
 
-Four scoped experiments are complete:
+Five scoped experiments are complete:
 
 1. The published SC-DREG `04002` inference example runs and has been compared
    quantitatively with all five committed upstream outputs.
@@ -22,6 +22,11 @@ Four scoped experiments are complete:
    the 04002 and subject reconstructions using an explicit, hypothetical
    intensity mapping. Subject reprojection discrepancies were measured against
    curated 2D marks; they do not validate 3D anatomy.
+5. An optional pretrained py-ceph 2D detector was compared on the original
+   ceph against the curated manual marks. It produced separate unreviewed
+   predictions and manual/automatic landmark-driven 128 x 128 candidates.
+   Detection and canonicalization remain distinct, and no 3D optimization
+   followed.
 
 For a new task, follow the user's requested scope. Do not automatically begin TrueDepth,
 high-resolution reconstruction, Blender, GUI, osteotomies, fixation plates,
@@ -39,6 +44,8 @@ as patient-specific anatomical truth.
   metrics, visualization paths, recommendation and limitations.
 - `docs/ali_cbct_probe.md`: optional ALI-CBCT detector source, landmark
   correspondence, intensity/geometry compatibility, experimental results.
+- `docs/ceph_2d_landmarks.md`: 2D detector selection, compatibility,
+  comparison against curated points, and landmark-driven preprocessing.
 - `docs/experimental_ceph_alignment.md`: superseded exploratory alignment;
   its visual anchors are not reviewed cephalometric landmarks.
 
@@ -76,6 +83,12 @@ The public upstream implementation is pinned under `vendor/sc-dreg/` at
 - S/N/Ba/ANS/PNS/A/B/Pog/Me agents completed on both reconstructed volumes.
   Subject 2D reprojection discrepancies range from 3.80 to 14.51 model pixels;
   the largest is ANS. See the ALI note and ignored overlays for exact values.
+- The py-ceph detector supports 13 directly comparable skeletal/dental marks
+  on this ceph. Full-image detection has 23.42 px mean, 23.64 px median and
+  60.04 px max original-raster error against manual marks. Letterboxing fails
+  badly; detector input hypotheses are not SC-DREG normalization rules.
+- No independent clinical measurement table is present. SNA/SNB/ANB in the
+  2D report are derived from the curated and predicted point coordinates.
 
 ## Reproduce the completed work
 
@@ -105,6 +118,12 @@ sensitivity note. Do not copy that polygon to another patient's image.
 The optional ALI experiment uses `scripts/ali_cbct_probe.py` and
 `scripts/analyze_ali_cbct_probe.py`; see `docs/ali_cbct_probe.md` for the
 separate environment, model downloads, commands and coordinate caveats.
+
+The optional 2D detector uses `scripts/run_ceph_2d_detector.py` and the
+landmark adapter `scripts/canonicalize_from_ceph_landmarks.py`; see
+`docs/ceph_2d_landmarks.md` for the separate environment, exact commands,
+case-specific experimental template and accuracy limits. Its ignored
+`vendor/py-ceph/` checkout and pickle checkpoint must remain untracked.
 
 ## Engineering and data rules
 
