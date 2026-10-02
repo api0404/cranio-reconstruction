@@ -54,9 +54,11 @@ Their refined volumes have NCC `0.946`, and their registered mandibles have
 Dice `0.642`. Thus the outputs are **not identical**, but the common fixed
 reference anatomy strongly shapes both projections. This comparison does
 not prove that the network ignores its input; it does show that the current
-subject result fails to reproduce the distinctive forward projection and jaw
-geometry visible in the ceph. The model-grid mesh should not be presented
-as a realistic reconstruction of this person's skull.
+subject result fails to reproduce the forward projection and jaw geometry
+visible in the ceph. There is no evidence that this person's anatomy is
+unusual or outside the model's learned shape range; input-domain and model
+response causes have not been separated. The model-grid mesh should not be
+presented as a realistic reconstruction of this person's skull.
 
 The curated Go, constructed Go, Me, Pog and B marks have been mapped into the
 corrected 128-pixel input and overlaid against a 2D projection of SC-DREG's
