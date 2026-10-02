@@ -46,6 +46,18 @@ warped-mandible Dice `0.809`. This alone invalidates treating a single crop
 as a secure recovery of the patient's jaw. The corrected registered mandible
 mask has 17,338 voxels, versus 18,251 in the former zoomed run.
 
+Reinspection of the side-by-side images revealed a broader failure: despite
+visibly different source profiles, the current subject and published `04002`
+outputs look much more similar to each other than their inputs do. The two
+raw inputs have NCC `0.606`, while their refined DRRs have NCC `0.968`.
+Their refined volumes have NCC `0.946`, and their registered mandibles have
+Dice `0.642`. Thus the outputs are **not identical**, but the common fixed
+reference anatomy strongly shapes both projections. This comparison does
+not prove that the network ignores its input; it does show that the current
+subject result fails to reproduce the distinctive forward projection and jaw
+geometry visible in the ceph. The model-grid mesh should not be presented
+as a realistic reconstruction of this person's skull.
+
 The curated Go, constructed Go, Me, Pog and B marks have been mapped into the
 corrected 128-pixel input and overlaid against a 2D projection of SC-DREG's
 warped reference mandible mask at
@@ -94,6 +106,8 @@ unit spacing does not establish millimeters or anatomical axes.
 
 The fixed-template deformation, incomplete clinical input calibration and lack
 of paired 3D geometry prevent us from concluding that either exported mesh
-matches the patient. Further image-score tuning would not establish the jaw's
-true shape. Independent corresponding output landmarks or paired CBCT are
-needed to measure and resolve the anatomical discrepancy.
+matches the patient. Further crop, image-score or mesh-threshold tuning would
+not establish the face's true shape. Independent corresponding output
+landmarks or paired CBCT are needed to measure and resolve the anatomical
+discrepancy. The current SC-DREG output is retained as a failed exploratory
+baseline, not as the base mesh for a realistic subject morph.

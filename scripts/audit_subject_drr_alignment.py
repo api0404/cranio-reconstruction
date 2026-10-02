@@ -73,6 +73,27 @@ def main() -> None:
             "refined_volume_mae": float(np.mean(np.abs(a - b))),
             "refined_volume_correlation": float(np.corrcoef(a.ravel(), b.ravel())[0, 1]),
             "registered_mandible_dice": float(2 * np.count_nonzero(sa & sb) / (sa.sum() + sb.sum()))}
+    if "published_04002" in cases:
+        subject = cases["recommended_masked_tighter_fov"]
+        published = cases["published_04002"]
+        def png(name: str, suffix: str) -> np.ndarray:
+            return np.asarray(Image.open(str(cases[name]) + suffix), np.float32) / 255
+        input_subject = png("recommended_masked_tighter_fov", "_raw.png")
+        input_published = png("published_04002", "_raw.png")
+        drr_subject = png("recommended_masked_tighter_fov", "_refine_drr.png")
+        drr_published = png("published_04002", "_refine_drr.png")
+        volume_subject = sitk.GetArrayFromImage(sitk.ReadImage(str(subject) + "_refine.nii.gz"))
+        volume_published = sitk.GetArrayFromImage(sitk.ReadImage(str(published) + "_refine.nii.gz"))
+        jaw_subject = sitk.GetArrayFromImage(sitk.ReadImage(str(subject) + "_seg_reg.nii.gz")) >= .5
+        jaw_published = sitk.GetArrayFromImage(sitk.ReadImage(str(published) + "_seg_reg.nii.gz")) >= .5
+        report["subject_vs_published_04002"] = {
+            "input_ncc": ncc(input_subject, input_published),
+            "refined_drr_ncc": ncc(drr_subject, drr_published),
+            "refined_drr_mae_unit_range": float(np.mean(np.abs(drr_subject - drr_published))),
+            "refined_volume_ncc": ncc(volume_subject, volume_published),
+            "registered_mandible_dice": float(2 * np.count_nonzero(jaw_subject & jaw_published)
+                                               / (jaw_subject.sum() + jaw_published.sum())),
+            "interpretation_limit": "Similar projections do not prove identical fields or that the model ignores the input"}
     fig.savefig(args.output_dir / "input_drr_comparison.png", dpi=150)
     plt.close(fig)
     (args.output_dir / "alignment.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
