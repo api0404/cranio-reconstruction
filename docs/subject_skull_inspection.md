@@ -1,91 +1,99 @@
-# Subject SC-DREG skull for visual inspection
+# Subject SC-DREG output: visual inspection and mismatch audit
 
-Status: exploratory model output from the local cephalogram, 2026-10-02.
-This is an inspectable deformation of SC-DREG's fixed reference, not verified
-patient-specific bone geometry.
+Status: **unvalidated model estimate; visible mandibular mismatch**. The user
+observed differences in gonial angle, Gonion height, and FMA between the ceph
+and the reconstruction. These differences are anatomically material. Do not
+use the exported mandible or skull as patient-specific geometry.
 
-## Input used
+## Correction to the earlier export
 
-The exact prior ignored `manual/anchor_tighter_128.png`, private transform
-matrix and mask config are absent in this checkout. The selected input is
-`outputs/subject_inspection/input/manual_masked_anchor_tighter_recreated_128.png`.
-It uses the same private ceph, the curated manual S/N/PNS/U1_tip/Me marks as
-mapped checks, the documented mask for this image's vertical ruler, identity
-intensity mapping and the **rounded** geometry reported for the prior manual
-`anchor_tighter` run: center `(1799.64,1099.68)` source pixels, FOV width
-`1603.57` source pixels and rotation `1.0502°`. That prior geometry came from
-fitting the curated marks to the experimental `tighter_fov` template, then
-applying the 1.15 tighter scale factor. We cannot recover its exact floating
-point transform from the rounded report, so this is a recreation, not a
-byte-exact copy of the prior manual candidate. The input config and invertible
-**coordinate** transform are saved beside the PNG; crop/downsampling is not
-invertible.
+The first inspection export mistakenly used the later manual `anchor_tighter`
+crop: FOV `1603.57` source pixels. The project recommendation was the masked
+`tighter_fov` template: FOV `1844.1` source pixels. The corrected local input
+is `outputs/subject_inspection/recommended_input/manual_masked_tighter_fov_recreated_128.png`.
+It uses the same original ceph, the documented same-image vertical-ruler mask,
+identity intensity mapping, and a similarity transform reconstructed from
+rounded report values: center `(1799.64,1099.68)` source pixels, rotation
+`1.0502°`, FOV `1844.1` source pixels. The curated manual S/N/PNS/U1_tip/Me
+marks are mapped as checks. In the earlier experiment a manual fit recovered
+the `tighter_fov` template; its exact private transform/input files are absent,
+so this is a near recreation, not a byte-exact rerun. The generated config,
+source hash and 3×3 coordinate transform are saved beside the PNG.
 
-The ruler mask covers 0.893% of the source raster, but lies outside this
-particular crop. Consequently the generated 128×128 PNG is pixel-identical to
-the earlier approximate unmasked input in this checkout (SHA-256
-`5157aea7b7591dfff43cee3665a8a1e16544a9fe14e66c0ba16e381b8f344178`).
-Both inference runs produced exactly equal refined arrays. The current run
-nevertheless uses the documented mask and curated manual landmark provenance.
-The earlier report's manual registered mandible voxel count was 18,251; the
-current count is also 18,251. That count alone does not establish exact
-equality with the missing earlier reconstruction.
+The former zoomed artifacts remain under `outputs/subject_inspection/input`,
+`inference`, and `meshes` solely as a comparison. **Use the `recommended_*`
+directories below for the corrected exploratory export.**
 
-## Open these files
+## Measured mismatch
 
-All files below are local, generated and Git-ignored. In Blender, use
-**File > Import > Stanford PLY**; in 3D Slicer, use **Add Data**. Import the
-skull and mandible PLY together without rescaling either one.
+| Input versus its own refined DRR | NCC | SSIM | Edge NCC | Top-15% edge Dice |
+| --- | ---: | ---: | ---: | ---: |
+| Former zoomed `anchor_tighter` | 0.715 | 0.253 | 0.240 | 0.259 |
+| Corrected masked `tighter_fov` | 0.846 | 0.316 | 0.448 | 0.379 |
+| Published `04002` example | 0.873 | 0.522 | 0.699 | 0.560 |
 
-| Purpose | Local file |
+The corrected crop materially improves global agreement and reproduces the
+earlier sensitivity study's approximate `tighter_fov` values. It still has
+substantially worse edge agreement than the published example, and the DRR
+remains visibly smoother and different at the jaw. Flipping the corrected DRR
+horizontally, vertically or 180° lowers NCC from `0.846` to `-0.187`, `0.581`
+or `-0.278`, respectively; a simple display flip does not explain the gap.
+These are image self-consistency metrics, **not** 3D accuracy scores.
+
+The two subject crops produce meaningfully different 3D results: refined
+volume correlation `0.964`, mean absolute intensity difference `0.0197`, and
+warped-mandible Dice `0.809`. This alone invalidates treating a single crop
+as a secure recovery of the patient's jaw. The corrected registered mandible
+mask has 17,338 voxels, versus 18,251 in the former zoomed run.
+
+The curated Go, constructed Go, Me, Pog and B marks have been mapped into the
+corrected 128-pixel input and overlaid against a 2D projection of SC-DREG's
+warped reference mandible mask at
+`outputs/subject_drr_audit/mandible_mark_overlay.png`. Nearest mask-boundary
+distances are recorded in `mandible_alignment.json`, but **a nearby outline
+pixel is not the model's Gonion, a gonial angle, or FMA**. The available model
+output does not supply reviewed corresponding 3D/2D landmarks. The user's
+observed jaw-angle and vertical discrepancies are not contradicted by those
+nearest-edge distances. We have not measured a model-minus-subject FMA angle;
+reporting one from these masks would invent an unsupported landmark definition.
+
+## Corrected files for exploratory viewing
+
+All paths below are local and Git-ignored. Import PLY in Blender or 3D Slicer
+without rescaling the skull and mandible relative to each other.
+
+| Purpose | File |
 | --- | --- |
-| Refined subject volume | `outputs/subject_inspection/inference/manual_masked_anchor_tighter_recreated_128_refine.nii.gz` |
-| Visual skull starting point | `outputs/subject_inspection/meshes/subject_intensity_0p55.ply` |
-| Warped reference mandible | `outputs/subject_inspection/meshes/subject_warped_reference_mandible.ply` |
-| Three grid-view previews | `outputs/subject_inspection/meshes/subject_intensity_0p55_views.png` |
-| Full extraction measurements | `outputs/subject_inspection/meshes/extraction.json` |
+| Corrected refined volume | `outputs/subject_inspection/recommended_inference/manual_masked_tighter_fov_recreated_128_refine.nii.gz` |
+| Corrected intensity surface, 0.55 | `outputs/subject_inspection/recommended_meshes/subject_intensity_0p55.ply` |
+| Corrected warped reference mandible | `outputs/subject_inspection/recommended_meshes/subject_warped_reference_mandible.ply` |
+| Three grid-view previews | `outputs/subject_inspection/recommended_meshes/subject_intensity_0p55_views.png` |
+| Input/DRR comparison | `outputs/subject_drr_audit/input_drr_comparison.png` |
+| Mandible mark overlay | `outputs/subject_drr_audit/mandible_mark_overlay.png` |
+| Numeric extraction and audits | `outputs/subject_inspection/recommended_meshes/extraction.json`, `outputs/subject_drr_audit/alignment.json`, `outputs/subject_drr_audit/mandible_alignment.json` |
 
-The separately exported mandible is the **rounded SC-DREG warp of its supplied
-reference mandible segmentation**. It is model-transferred anatomy, not an
-independent segmentation of a subject CBCT. The refined NIfTI and PLY meshes
-share model-grid coordinates. Array order is `[z,y,x]`, PLY vertex order is
-`(x,y,z)`. The NIfTI unit spacing is a serialization default; imported viewers
-may display that as millimeters, but no physical millimeter calibration or
-anatomical axis orientation has been established.
-
-## Intensity sweep
-
-The refined volume is unit range (observed maximum `1.00000012` from floating
-point interpolation), mean `0.16177`, median `0`, 75th percentile `0.34361`,
-95th percentile `0.56846`. These values are not HU. Marching cubes exports:
-
-| Isovalue | Voxels at or above | Vertices | Triangles | Mesh and views |
-| ---: | ---: | ---: | ---: | --- |
-| 0.45 | 189,486 | 154,619 | 307,146 | `subject_intensity_0p45.ply`, `subject_intensity_0p45_views.png` |
-| **0.55** | **112,405** | **118,695** | **237,080** | `subject_intensity_0p55.ply`, `subject_intensity_0p55_views.png` |
-| 0.65 | 78,992 | 101,597 | 202,586 | `subject_intensity_0p65.ply`, `subject_intensity_0p65_views.png` |
-
-Start visual inspection at **0.55**: it gives a middle-density surface and is
-near the intensity split used internally by the published DRR renderer. This
-is a practical display choice, not a validated bone threshold. Compare 0.45
-and 0.65 before interpreting a missing or merged structure. The warped
-mandible mesh uses the binary registered mask's 0.5 boundary; it contains
-12,503 vertices and 25,018 triangles. The PNG previews render subsampled
-surface points from three **grid** views, not anatomical left/right labels or
-screenshots from Blender/Slicer. The PLY files contain the full meshes.
+The 0.55 PLY is only a visual intensity isosurface. The refined volume has
+unit-range intensities, mean `0.16151` approximately; these are not HU.
+The corrected sweep at 0.45/0.55/0.65 contains 186,528/110,197/77,232
+voxels at or above threshold, respectively. Neither threshold identifies
+validated bone. The separate mandible mesh is the **model's warped supplied
+reference segmentation**, not a segmentation of this patient's CBCT.
+NIfTI arrays use `[z,y,x]`; PLY vertices use `(x,y,z)` model indices. Header
+unit spacing does not establish millimeters or anatomical axes.
 
 ## Reproduce
 
-Install `requirements-exploration.txt` and the documented model assets, then
-run from the repository root:
-
 ```powershell
 .venv\Scripts\python.exe scripts/prepare_subject_inspection_input.py
-.venv\Scripts\python.exe scripts/run_sc_dreg_demo.py --input outputs/subject_inspection/input/manual_masked_anchor_tighter_recreated_128.png --output-dir outputs/subject_inspection/inference --skip-reference-comparison --capture-deformation
+.venv\Scripts\python.exe scripts/run_sc_dreg_demo.py --input outputs/subject_inspection/recommended_input/manual_masked_tighter_fov_recreated_128.png --output-dir outputs/subject_inspection/recommended_inference --skip-reference-comparison --capture-deformation
 .venv\Scripts\python.exe scripts/export_subject_inspection_meshes.py
+.venv\Scripts\python.exe scripts/audit_subject_drr_alignment.py
+.venv\Scripts\python.exe scripts/audit_subject_mandible.py
 .venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The ceph, curated marks, model assets, NIfTI and meshes stay in ignored local
-directories. No independent CBCT is available to validate the reconstruction,
-threshold or physical scale.
+The fixed-template deformation, incomplete clinical input calibration and lack
+of paired 3D geometry prevent us from concluding that either exported mesh
+matches the patient. Further image-score tuning would not establish the jaw's
+true shape. Independent corresponding output landmarks or paired CBCT are
+needed to measure and resolve the anatomical discrepancy.

@@ -94,10 +94,11 @@ summarizes all 60 used PCA directions. Its current subject run uses an
 explicitly approximate unmasked input because the prior private candidate is
 unavailable in this checkout.
 
-The [subject skull inspection export](docs/subject_skull_inspection.md)
-recreates a masked, manual-informed input from the prior rounded transform,
-runs SC-DREG and exports local PLY skull and warped-reference-mandible meshes
-with multi-view previews and an intensity threshold sweep.
+The [subject skull inspection and mismatch audit](docs/subject_skull_inspection.md)
+recreates the recommended masked `tighter_fov` input and exports local PLY
+surfaces and previews. Its projected mandible visibly disagrees with the
+clinical ceph in important anatomical features; the mesh is an unvalidated
+model estimate, not patient-specific bone geometry.
 
 ## Repository layout
 

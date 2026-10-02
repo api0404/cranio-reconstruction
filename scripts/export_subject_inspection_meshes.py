@@ -53,9 +53,9 @@ def preview(path: Path, skull: np.ndarray, mandible: np.ndarray, title: str) -> 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--inference-dir", type=Path, default=ROOT / "outputs/subject_inspection/inference")
-    parser.add_argument("--stem", default="manual_masked_anchor_tighter_recreated_128")
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs/subject_inspection/meshes")
+    parser.add_argument("--inference-dir", type=Path, default=ROOT / "outputs/subject_inspection/recommended_inference")
+    parser.add_argument("--stem", default="manual_masked_tighter_fov_recreated_128")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs/subject_inspection/recommended_meshes")
     args = parser.parse_args()
     import SimpleITK as sitk
 
@@ -82,7 +82,7 @@ def main() -> None:
         preview(args.output_dir / f"subject_intensity_{tag}_views.png", vertices, jaw_vertices,
                 f"SC-DREG subject, isovalue {level}")
     report = {
-        "input_status": "masked_curated_manual_informed_recreation_from_rounded_prior_transform",
+        "input_status": "recommended_masked_tighter_fov_recreation_from_rounded_prior_transform_with_curated_manual_checks",
         "refined_volume": str(volume_path), "registered_mandible_mask": str(segment_path),
         "volume_sha256": hashlib.sha256(volume_path.read_bytes()).hexdigest(),
         "segmentation_sha256": hashlib.sha256(segment_path.read_bytes()).hexdigest(),
