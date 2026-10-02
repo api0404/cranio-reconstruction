@@ -1,6 +1,7 @@
 """Run the published 04002 SC-DREG example using project-side compatibility edits."""
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -60,6 +61,8 @@ def main() -> int:
     parser.add_argument("--pca-dim", type=int, default=60)
     parser.add_argument("--skip-reference-comparison", action="store_true",
                         help="Use for non-04002 inputs; no published ground truth applies")
+    parser.add_argument("--capture-deformation", action="store_true",
+                        help="Save PCA parameters and both dense fields for exploration")
     args = parser.parse_args()
     published_input = ROOT / "vendor" / "sc-dreg" / "tests" / "04002.png"
     if args.input.resolve() != published_input.resolve() and not args.skip_reference_comparison:
@@ -93,7 +96,7 @@ def main() -> int:
         outputs = model(img)
     inference_seconds = time.perf_counter() - inference_started
     print(f"Forward inference time: {inference_seconds:.2f} s", flush=True)
-    coarse_drr, refine_drr, _, _, _, _, refine_volume, _, _, _, _, refine_vol_seg = outputs
+    coarse_drr, refine_drr, coarse_df, refined_df, para, _, refine_volume, _, _, _, _, refine_vol_seg = outputs
     args.output_dir.mkdir(parents=True, exist_ok=True)
     stem = args.input.stem
     for suffix, tensor in (("raw", img), ("coarse_drr", coarse_drr), ("refine_drr", refine_drr)):
@@ -101,6 +104,11 @@ def main() -> int:
     for suffix, tensor in (("refine", refine_volume), ("seg_reg", torch.round(refine_vol_seg))):
         volume = tensor.detach().squeeze().cpu().numpy()
         sitk.WriteImage(sitk.GetImageFromArray(volume), str(args.output_dir / f"{stem}_{suffix}.nii.gz"))
+    if args.capture_deformation:
+        np.savez_compressed(args.output_dir / f"{stem}_deformation.npz",
+                            pca=para.detach().cpu().numpy().reshape(60),
+                            coarse=coarse_df.detach().cpu().numpy().reshape(128, 128, 128, 3),
+                            refined=refined_df.detach().cpu().numpy().reshape(128, 128, 128, 3))
     if not args.skip_reference_comparison:
         metrics = compare(args.output_dir)
         (args.output_dir / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
@@ -119,6 +127,12 @@ def main() -> int:
                 "nifti_geometry": nifti_geometry,
                 "pca_dim": args.pca_dim, "forward_seconds": inference_seconds,
                 "total_seconds": time.perf_counter() - started}
+    if args.capture_deformation:
+        run_info["deformation_capture"] = {
+            "file": f"{stem}_deformation.npz", "array_order": "zyx_with_xyz_vector_components",
+            "units": "model_grid_index_units_not_mm",
+            "input_sha256": hashlib.sha256(args.input.read_bytes()).hexdigest(),
+            "training_mode": bool(model.training)}
     if device.type == "cuda":
         run_info["peak_cuda_allocated_bytes"] = torch.cuda.max_memory_allocated()
     (args.output_dir / "run_info.json").write_text(json.dumps(run_info, indent=2) + "\n", encoding="utf-8")

@@ -88,6 +88,12 @@ The two refined volumes correlate at 0.9932 and their registered mandibular
 masks have Dice 0.9709. These are input-sensitivity results, not anatomical
 accuracy measurements.
 
+The [reference and deformation exploration](docs/sc_dreg_reference_deformation.md)
+exports model-grid reference meshes, captures coarse and refined fields, and
+summarizes all 60 used PCA directions. Its current subject run uses an
+explicitly approximate unmasked input because the prior private candidate is
+unavailable in this checkout.
+
 ## Repository layout
 
 ```text
