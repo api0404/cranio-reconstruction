@@ -82,6 +82,12 @@ marks, then generates separate manual- or automatic-landmark-driven 128 × 128
 SC-DREG candidates. The manual export remains the reference and the automatic
 predictions require review.
 
+A [controlled manual-versus-automatic comparison](docs/manual_auto_sc_dreg_comparison.md)
+passes both `anchor_tighter` candidates through the same SC-DREG checkpoint.
+The two refined volumes correlate at 0.9932 and their registered mandibular
+masks have Dice 0.9709. These are input-sensitivity results, not anatomical
+accuracy measurements.
+
 ## Repository layout
 
 ```text

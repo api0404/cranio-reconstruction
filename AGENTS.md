@@ -9,7 +9,7 @@ model. This is exploratory work, not a diagnostic or surgical-planning tool.
 
 ## Current status and scope
 
-Five scoped experiments are complete:
+Six scoped experiments are complete:
 
 1. The published SC-DREG `04002` inference example runs and has been compared
    quantitatively with all five committed upstream outputs.
@@ -27,6 +27,10 @@ Five scoped experiments are complete:
    predictions and manual/automatic landmark-driven 128 x 128 candidates.
    Detection and canonicalization remain distinct, and no 3D optimization
    followed.
+6. A controlled manual-versus-py-ceph `anchor_tighter` comparison ran both
+   candidates through the same SC-DREG checkpoint and repeated nine-label
+   ALI probes. It isolates input sensitivity; manual reconstruction is the
+   experimental reference, not 3D anatomical ground truth.
 
 For a new task, follow the user's requested scope. Do not automatically begin TrueDepth,
 high-resolution reconstruction, Blender, GUI, osteotomies, fixation plates,
@@ -46,6 +50,8 @@ as patient-specific anatomical truth.
   correspondence, intensity/geometry compatibility, experimental results.
 - `docs/ceph_2d_landmarks.md`: 2D detector selection, compatibility,
   comparison against curated points, and landmark-driven preprocessing.
+- `docs/manual_auto_sc_dreg_comparison.md`: paired manual/automatic
+  reconstruction, transform, deformation, segmentation and ALI differences.
 - `docs/experimental_ceph_alignment.md`: superseded exploratory alignment;
   its visual anchors are not reviewed cephalometric landmarks.
 
@@ -89,6 +95,11 @@ The public upstream implementation is pinned under `vendor/sc-dreg/` at
   badly; detector input hypotheses are not SC-DREG normalization rules.
 - No independent clinical measurement table is present. SNA/SNB/ANB in the
   2D report are derived from the curated and predicted point coordinates.
+- Replacing the five manual fit landmarks with py-ceph marks in
+  `anchor_tighter` moves the crop center 10.59 source pixels, changes
+  rotation 0.449 degrees and scale 1.268%. Refined-volume correlation is
+  0.9932, mandibular Dice 0.9709. The largest 2D detector outliers Po and
+  ANS were excluded from the fit. See the paired comparison for all metrics.
 
 ## Reproduce the completed work
 
@@ -124,6 +135,11 @@ landmark adapter `scripts/canonicalize_from_ceph_landmarks.py`; see
 `docs/ceph_2d_landmarks.md` for the separate environment, exact commands,
 case-specific experimental template and accuracy limits. Its ignored
 `vendor/py-ceph/` checkout and pickle checkpoint must remain untracked.
+
+The paired experiment runs `scripts/compare_manual_auto_sc_dreg.py` after
+the two `anchor_tighter` inputs pass through `run_sc_dreg_demo.py`;
+`docs/manual_auto_sc_dreg_comparison.md` gives exact commands and results.
+Optional ALI runs on both volumes add projected landmark comparisons.
 
 ## Engineering and data rules
 
