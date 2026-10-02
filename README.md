@@ -94,6 +94,11 @@ summarizes all 60 used PCA directions. Its current subject run uses an
 explicitly approximate unmasked input because the prior private candidate is
 unavailable in this checkout.
 
+The [subject skull inspection export](docs/subject_skull_inspection.md)
+recreates a masked, manual-informed input from the prior rounded transform,
+runs SC-DREG and exports local PLY skull and warped-reference-mandible meshes
+with multi-view previews and an intensity threshold sweep.
+
 ## Repository layout
 
 ```text
