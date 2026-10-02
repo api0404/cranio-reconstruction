@@ -10,6 +10,7 @@ htmlcov/
 
 # Virtual environments
 .venv/
+.venv-ali/
 .uv-cache/
 venv/
 env/
@@ -64,6 +65,10 @@ artifacts/*
 # Large numeric model assets
 *.npy
 *.npz
+
+# External ALI source checkouts are local, optional research dependencies.
+vendor/ali-cbct/
+vendor/slicer-automated-dental-tools/
 
 # Blender backups
 *.blend1

@@ -9,7 +9,7 @@ model. This is exploratory work, not a diagnostic or surgical-planning tool.
 
 ## Current status and scope
 
-Three milestones are complete:
+Four scoped experiments are complete:
 
 1. The published SC-DREG `04002` inference example runs and has been compared
    quantitatively with all five committed upstream outputs.
@@ -18,9 +18,12 @@ Three milestones are complete:
 3. A local input-domain sensitivity study ran the three existing candidates,
    eight small perturbations, and an unmasked control through the reproduced
    model. It measures compatibility and self-consistency, not 3D accuracy.
+4. An optional ALI-CBCT probe ran nine published midline landmark agents on
+   the 04002 and subject reconstructions using an explicit, hypothetical
+   intensity mapping. Subject reprojection discrepancies were measured against
+   curated 2D marks; they do not validate 3D anatomy.
 
-The next milestone has **not** been authorized or defined. For a new task,
-follow the user's requested scope. Do not automatically begin TrueDepth,
+For a new task, follow the user's requested scope. Do not automatically begin TrueDepth,
 high-resolution reconstruction, Blender, GUI, osteotomies, fixation plates,
 clinical deployment, or model retraining. Do not present the current 3D output
 as patient-specific anatomical truth.
@@ -34,6 +37,8 @@ as patient-specific anatomical truth.
   clinical preprocessing, transform conventions, candidate generation.
 - `docs/sc_dreg_input_sensitivity.md`: local ceph mask, 12-case experiment,
   metrics, visualization paths, recommendation and limitations.
+- `docs/ali_cbct_probe.md`: optional ALI-CBCT detector source, landmark
+  correspondence, intensity/geometry compatibility, experimental results.
 - `docs/experimental_ceph_alignment.md`: superseded exploratory alignment;
   its visual anchors are not reviewed cephalometric landmarks.
 
@@ -54,15 +59,23 @@ The public upstream implementation is pinned under `vendor/sc-dreg/` at
   See the baseline audit for the discrepancy analysis.
 - `coeff4.npy` is `(129, 6291456)` float64, about 6.05 GiB of array data.
   The runner memory-maps it and materializes only the first 60 rows as float32.
-- The local private ceph is 2808 x 2136. Its current landmark file contains
-  rough visual regions, **not** reviewed S/N/Ba/Me points. No paired CBCT or
-  independent DRR landmark labels exist for it, so 2D reprojection error and
-  patient-specific 3D accuracy cannot currently be measured.
+- The local private ceph is 2808 x 2136. The candidate-generation config
+  contains rough visual anchors. A separate private landmark export now
+  contains curated S/N/Ba/Me and other 2D cephalometric points. They permit
+  2D reprojection discrepancy measurement, but no paired CBCT exists and
+  patient-specific 3D accuracy cannot be measured.
 - The sensitivity study found substantial dependence on FOV and even small
   translations. `tighter_fov` is the documented first exploratory candidate,
   not an established physical normalization. The vertical ruler body was
   masked in a copy; a horizontal bracket remains. NIfTI unit spacing is a
   serialization default, not millimeters.
+- Native ALI-CBCT histogram correction turns a unit-range SC-DREG volume into
+  all-zero int16 data. The optional probe uses an explicitly hypothetical
+  intensity map and keeps ALI source and weights isolated. Its predictions
+  cannot be assigned clinical accuracy or physical millimeters.
+- S/N/Ba/ANS/PNS/A/B/Pog/Me agents completed on both reconstructed volumes.
+  Subject 2D reprojection discrepancies range from 3.80 to 14.51 model pixels;
+  the largest is ANS. See the ALI note and ignored overlays for exact values.
 
 ## Reproduce the completed work
 
@@ -89,6 +102,10 @@ generated and ignored by Git. The input configuration is also private and
 ignored; the exact ruler-mask polygon and assumptions are documented in the
 sensitivity note. Do not copy that polygon to another patient's image.
 
+The optional ALI experiment uses `scripts/ali_cbct_probe.py` and
+`scripts/analyze_ali_cbct_probe.py`; see `docs/ali_cbct_probe.md` for the
+separate environment, model downloads, commands and coordinate caveats.
+
 ## Engineering and data rules
 
 - Inspect source, model assets and measured runtime before changing behavior.
@@ -113,8 +130,8 @@ sensitivity note. Do not copy that polygon to another patient's image.
 
 ## Useful next evidence, when authorized
 
-Reviewed S/N/Ba/Me landmarks on the original ceph and independent marks on
-model DRRs would permit a real 2D reprojection analysis. Original DICOM
+Independent marks on model DRRs would help separate ALI errors from SC-DREG
+reconstruction error. Original DICOM
 detector spacing, source-to-detector geometry, or author-provided training
 preprocessing would help resolve FOV and physical scale. A paired clinical
 CBCT would be needed for 3D accuracy evaluation. Until such evidence exists,

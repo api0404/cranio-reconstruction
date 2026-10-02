@@ -61,34 +61,20 @@ High-resolution lateral cephalogram
           printable models
 ```
 
-## Current milestone
+## Current research status
 
-Reproduce the published SC-DREG inference pipeline exactly on its own example
-input before modifying model behavior.
+The published SC-DREG `04002` example is reproduced quantitatively: the
+refined volume has MAE `5.08e-8` against its committed reference, with exact
+raw PNG and segmentation matches. See [the baseline audit](docs/sc_dreg_notes.md).
+The [clinical ceph canonicalization](docs/clinical_ceph_canonicalization.md)
+and [input-domain sensitivity study](docs/sc_dreg_input_sensitivity.md) test
+explicit 128×128 candidates without assigning physical calibration.
 
-**Status (2026-10-01): reproduced on the published `04002` example.** The
-refined volume has MAE `5.08e-8` against the committed reference, the
-segmentation and raw PNG match exactly, and sparse DRR differences are
-quantified in [the baseline audit](docs/sc_dreg_notes.md). This result does
-not validate clinical cephalogram preprocessing or patient-specific 3D
-accuracy.
-
-The next project-side experiment creates reversible-coordinate 128×128
-clinical-ceph candidates with explicit FOV and landmark assumptions. See
-[clinical ceph canonicalization](docs/clinical_ceph_canonicalization.md).
-The local ceph's masked-candidate inference and perturbation results are in
-[the input-domain sensitivity study](docs/sc_dreg_input_sensitivity.md).
-
-Success means:
-
-1. the published example `04002.png` runs successfully;
-2. the reconstructed volume and DRR outputs match the upstream example;
-3. all pretrained asset shapes and data types are documented;
-4. compatibility changes for modern PyTorch/CUDA are minimal and documented;
-5. the expected cephalogram preprocessing is investigated and clearly separated
-   into verified behavior, strong inference, and unknowns.
-
-Only after that milestone should a new clinical cephalogram be introduced.
+An [optional ALI-CBCT compatibility probe](docs/ali_cbct_probe.md) tests
+whether a published 3D CBCT landmark detector can recognize locations in the
+synthetic SC-DREG output. Native ALI preprocessing erases SC-DREG's unit-range
+intensities, so this probe uses a documented hypothetical intensity mapping.
+Its landmarks are experimental annotations, not patient-specific 3D truth.
 
 ## Repository layout
 
